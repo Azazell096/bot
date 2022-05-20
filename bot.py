@@ -1,4 +1,4 @@
-import telebot
+import telebot,subprocess,os, sys
 from telebot import types
 ######Текстовые переменные
 hi="""Вас приветствует BOT. Я помогу Вам:
@@ -13,7 +13,7 @@ hi="""Вас приветствует BOT. Я помогу Вам:
 
 
 keyboard_main=types.InlineKeyboardMarkup()
-keyboard_main.add(types.InlineKeyboardButton("Показания", callback_data="111"),types.InlineKeyboardButton("Оплата",callback_data="payment"),
+keyboard_main.add(types.InlineKeyboardButton("Показания", callback_data="statements"),types.InlineKeyboardButton("Оплата",callback_data="payment"),
                     types.InlineKeyboardButton("Личный кабинет", callback_data="None"),types.InlineKeyboardButton("Заявка", callback_data="None"),
                     types.InlineKeyboardButton("Справочная информация", callback_data="callback_info"), row_width=2 )
 keyboard_info=types.InlineKeyboardMarkup()
@@ -30,9 +30,20 @@ keyboard_payment.add(types.InlineKeyboardButton("ЛК Газпром межре�
 
 ######
 bot=telebot.TeleBot('1956570124:AAG3m3p3eTmpS7qTqdGrkdGI4eGXdRX_6Ug')
+
+
+@bot.message_handler(func=lambda message: message.text in ('start', 'старт', 'Старт'))
+def second_start(message):
+        bot.send_message(message.chat.id,hi, parse_mode='html', reply_markup=keyboard_main)
+
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(message.chat.id,hi, parse_mode='html', reply_markup=keyboard_main)
+
+@bot.callback_query_handler(func=lambda call: call.data=='statements')
+def callback_handler1(call):
+    subprocess.Popen([sys.executable, 'statements.py', str(call.message.chat.id)])
+
 
 
 @bot.callback_query_handler(func=lambda call: True)
