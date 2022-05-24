@@ -31,6 +31,13 @@ keyboard_payment.add(types.InlineKeyboardButton("ЛК Газпром межре�
 ######
 bot=telebot.TeleBot('1956570124:AAG3m3p3eTmpS7qTqdGrkdGI4eGXdRX_6Ug')
 
+class State:
+    def __init__(self):
+        self.phone=None
+        self.account=None
+        self.statements=None
+
+state=State()
 
 @bot.message_handler(func=lambda message: message.text in ('start', 'старт', 'Старт'))
 def second_start(message):
@@ -40,9 +47,36 @@ def second_start(message):
 def start(message):
     bot.send_message(message.chat.id,hi, parse_mode='html', reply_markup=keyboard_main)
 
+@bot.message_handler(commands=['help'])
+def help_handler(message):
+        help(telebot)
+
 @bot.callback_query_handler(func=lambda call: call.data=='statements')
-def callback_handler1(call):
-    subprocess.Popen([sys.executable, 'statements.py', str(call.message.chat.id)])
+def phone_request(call):
+    msg = bot.send_message(call.message.chat.id, "Введите номер телефона")
+    bot.register_next_step_handler(msg, personal_account_request)
+
+
+def personal_account_request(message):
+
+    state.phone = message.text
+    if state.phone.isdigit():
+        msg = bot.reply_to(message, "Введите номер лицевого счета")
+        bot.register_next_step_handler(msg, statements_request)
+
+
+def statements_request(message):
+    state.account = message.text
+    if state.account.isdigit():
+        msg = bot.reply_to(message, "Внесите показания счетчика")
+        bot.register_next_step_handler(msg, statements_handler)
+
+
+def statements_handler(message):
+    state.statements = message.text
+    if state.statements.isdigit():
+        bot.reply_to(message, f"Ваш номер {state.phone} Ваш лицевой счет {state.account} Ваши показания {state.statements}")
+
 
 
 
