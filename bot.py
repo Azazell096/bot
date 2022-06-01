@@ -49,7 +49,13 @@ headers = {
 global driver
 driver=dict()
 
-class state
+class data_container:
+    statements=''
+    phone=''
+    account=''
+
+state=data_container()
+
 
 ######
 bot=telebot.TeleBot('1956570124:AAG3m3p3eTmpS7qTqdGrkdGI4eGXdRX_6Ug')
