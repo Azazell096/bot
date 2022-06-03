@@ -46,6 +46,12 @@ headers = {
             'User-Agent': user_agent
         }
 
+options=webdriver.ChromeOptions()
+options.add_argument(f"user-agent={user_agent}")
+options.add_argument("disable-blink-features=AutomationControlled")
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_experimental_option('useAutomationExtension', False)
+
 global driver
 driver=dict()
 
@@ -100,7 +106,8 @@ def statements_handler(message):
     if state.statements.isdigit():
         bot.reply_to(message, f"Ваш номер {state.phone} Ваш лицевой счет {state.account} Ваши показания {state.statements}")
     #Отправка показаний на сайт !!!!!!!!
-        driver[message.chat.id] = webdriver.Chrome()
+
+        driver[message.chat.id] = webdriver.Chrome(options=options)
         driver[message.chat.id].get(url=url)
         input_ls = driver[message.chat.id].find_element(By.NAME,'ls')
         input_phone = driver[message.chat.id].find_element(By.NAME,'phone')
@@ -111,19 +118,34 @@ def statements_handler(message):
         input_statements.send_keys(state.statements)
         input_phone.clear()
         input_phone.send_keys(state.phone)
-        input_phone.send_keys(Keys.ENTER)
-        sms=driver[message.chat.id].find_element(By.NAME,'sms_code', )
-        print(sms)
-        msg=bot.send_message(message.chat.id, "Введите код из смс",reply_markup=keyboard_cancel)
-        bot.register_next_step_handler(msg, sms_handler)
+        time.sleep(1)
+        submit=driver[message.chat.id].find_element(By.TAG_NAME, "button")
+        submit.click()
+        try:
+            sms_code=driver[message.chat.id].find_element(By.NAME, 'sms_code')
+            msg = bot.send_message(message.chat.id, "Введите код из смс", reply_markup=keyboard_cancel)
+            bot.register_next_step_handler(msg, sms_handler,sms_code)
+        except Exception as ex:
+            print(ex)
+
+            bot.send_message(message.chat.id, "Error", reply_markup=keyboard_main)
+            bot.clear_step_handler_by_chat_id(message.char.id)
 
 
-def sms_handler(message):
-    input_sms=driver[message.chat.id].find_element(By.NAME,'sms_code', )
+
+
+def sms_handler(message, sms_code):
+    input_sms=sms_code
     input_sms.clear()
     input_sms.send_keys(message.text)
     input_sms.send_keys(Keys.ENTER)
     #!!!!!Реализовать проверу Успешного ввода кода из смс и принятия показаний  сайтом
+    try:
+        success=driver[message.chat.id].find_element(By.CLASS_NAME, 'callout-success')
+        bot.send_message(message.chat.id, )
+    except Exception as ex:
+
+
     bot.send_message(message.chat.id,"Ok",reply_markup=keyboard_main)
     #!!!!!Необходимо закрывать каждый процесс браузера после работы
 
@@ -132,9 +154,9 @@ def sms_handler(message):
 
 @bot.callback_query_handler(func=lambda call: call.data=='Cancel')
 def Cancel_handler(call):
-    bot.clear_step_handler_by_chat_id(call.message.chat.id)
-    bot.send_message(call.message.chat.id,"!! ", reply_markup=keyboard_main)
 
+    bot.send_message(call.message.chat.id,"!! ", reply_markup=keyboard_main)
+    bot.clear_step_handler_by_chat_id(call.message.chat.id)
 
 
 @bot.callback_query_handler(func=lambda call: True)
