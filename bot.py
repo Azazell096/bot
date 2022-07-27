@@ -1,4 +1,4 @@
-import telebot,subprocess,os, sys, requests, selenium, time
+import telebot,subprocess,os, sys, requests, selenium, time, functions
 from telebot import types
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -88,14 +88,13 @@ def phone_request(call):
 
 
 def personal_account_request(message):
-    state.phone = message.text
-    if state.phone.isdigit():
-        msg = bot.reply_to(message, "Введите номер лицевого счета", reply_markup=keyboard_cancel)
-        bot.register_next_step_handler(msg, statements_request)
+    state.phone = telNumber(message.text) # V Добавить обработку номера телефона для преобразования в нужный формат и защиты от дурака
+    msg = bot.reply_to(message, "Введите номер лицевого счета", reply_markup=keyboard_cancel)
+    bot.register_next_step_handler(msg, statements_request)
 
 
 def statements_request(message):
-    state.account = message.text
+    state.account = message.text #Добавить обработку лицевого счета по примеру номера
     if state.account.isdigit():
         msg = bot.reply_to(message, "Внесите показания счетчика",reply_markup=keyboard_cancel)
         bot.register_next_step_handler(msg, statements_handler)
@@ -128,9 +127,10 @@ def statements_handler(message):
         except Exception as ex:
             print(ex)
 
-            bot.send_message(message.chat.id, "Error", reply_markup=keyboard_main)
+            #!bot.send_message(message.chat.id, "Error", reply_markup=keyboard_main)
             bot.clear_step_handler_by_chat_id(message.char.id)
-
+            error=driver[message.chat.id].find_element(By.ID, "messblock")
+            bot.send_message(message.chat.id, error.text, reply_markup=keyboard_cancel)
 
 
 
@@ -140,14 +140,19 @@ def sms_handler(message, sms_code):
     input_sms.send_keys(message.text)
     input_sms.send_keys(Keys.ENTER)
     #!!!!!Реализовать проверу Успешного ввода кода из смс и принятия показаний  сайтом
-    try:
-        success=driver[message.chat.id].find_element(By.CLASS_NAME, 'callout-success')
-        bot.send_message(message.chat.id, )
-    except Exception as ex:
+    success=driver[message.chat.id].find_element_by_tag_name("h4")
+    if(success.text=="Операция выполнена!"):
+        bot.send_message(message.chat.id, "Показания внесены", reply_markup=keyboard_main)
+    else:
+        bot.send_message(message.chat.id, "Возникла ошибка. Убедитесь в правильности введенных данных и повторите позже", reply_markup=keyboard_cancel )
 
 
-    bot.send_message(message.chat.id,"Ok",reply_markup=keyboard_main)
+
+
+    #bot.send_message(message.chat.id,f"Успех{success.text}" )
+
     #!!!!!Необходимо закрывать каждый процесс браузера после работы
+
 
 
 

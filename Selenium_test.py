@@ -25,7 +25,7 @@ headers={
 
 try:
     driver.get(url=url)
-    input_ls = driver.find_element_by_name('ls')
+    input_ls = driver.find_element_by_name('lss')
     input_phone = driver.find_element_by_name('phone')
     input_statements = driver.find_element_by_name('statements')
     input_ls.clear()
@@ -36,9 +36,11 @@ try:
     input_phone.send_keys('9280301600')
 
     input_phone.send_keys(Keys.ENTER)
-    time.sleep(1)
-    submit = driver[message.chat.id].find_element(By.TAG_NAME, "button")
-    submit.click()
+
+    
+
+    print(mess.text)
+
 
 
 
