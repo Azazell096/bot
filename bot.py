@@ -4,7 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 
-######Кнопки и текстовые реплики бота
+######Кнопки и текстовые реплики бота--------------------------------------------------------------------------
 hi="""Вас приветствует BOT. Я помогу Вам:
 -Передать показания
 -Сделать заявку (опломбировка, проверка счетчика, пр.)
@@ -18,7 +18,7 @@ hi="""Вас приветствует BOT. Я помогу Вам:
 
 keyboard_main=types.InlineKeyboardMarkup()
 keyboard_main.add(types.InlineKeyboardButton("Показания", callback_data="statements"),types.InlineKeyboardButton("Оплата",callback_data="payment"),
-                    types.InlineKeyboardButton("Личный кабинет", callback_data="None"),types.InlineKeyboardButton("Заявка", callback_data="None"),
+                    types.InlineKeyboardButton("Личный кабинет", url='https://lk.mrgkchr.ru/'),types.InlineKeyboardButton("Заявка(None)", callback_data="None"),
                     types.InlineKeyboardButton("Справочная информация", callback_data="callback_info"), row_width=2 )
 
 keyboard_info=types.InlineKeyboardMarkup()
@@ -35,8 +35,10 @@ keyboard_payment.add(types.InlineKeyboardButton("ЛК Газпром межре�
 keyboard_cancel=types.InlineKeyboardMarkup()
 keyboard_cancel.add(types.InlineKeyboardButton("Отмена", callback_data="Cancel"))
 
+keyboard_struct_callback=types.InlineKeyboardMarkup()
+keyboard_struct_callback.add(types.InlineKeyboardButton("Call", callback_data="struct_callback"))
 
-######Переменные для отправки показаний
+######Переменные для отправки показаний-------------------------------------------------------
 
 url='https://lk.mrgkchr.ru/unauth/statements.php'
 user_agent = ('Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:50.0) '
@@ -62,8 +64,16 @@ class data_container:
 
 state=data_container()
 
+#####БД--------------------------------------------------
 
-######
+
+
+
+######---------------------------------------------------
+
+
+
+
 bot=telebot.TeleBot('1956570124:AAG3m3p3eTmpS7qTqdGrkdGI4eGXdRX_6Ug')
 
 
@@ -78,7 +88,17 @@ def start(message):
 
 @bot.message_handler(commands=['help'])
 
+@bot.message_handler(func=lambda message: message.text=="Struct_mes")
+def send_struct_mes(message):
+        bot.send_message(message.chat.id, message, reply_markup=keyboard_struct_callback)
 
+@bot.message_handler(func=lambda message: message.text=="Struct_call")
+def send_button(message):
+        bot.send_message(message.chet.id,"call", reply_markup=keyboard_struct_callback)
+
+@bot.callback_query_handler(func=lambda call: call.data=="struct_callback")
+def send_callback_structure(call):
+        bot.send_message(call.message.chat.id, call)
 
 @bot.callback_query_handler(func=lambda call: call.data=='statements')
 def phone_request(call):
@@ -88,7 +108,7 @@ def phone_request(call):
 
 
 def personal_account_request(message):
-    state.phone = telNumber(message.text) # V Добавить обработку номера телефона для преобразования в нужный формат и защиты от дурака
+    state.phone = functions.telNumber(message.text) # V Добавить обработку номера телефона для преобразования в нужный формат и защиты от дурака
     msg = bot.reply_to(message, "Введите номер лицевого счета", reply_markup=keyboard_cancel)
     bot.register_next_step_handler(msg, statements_request)
 
@@ -128,9 +148,11 @@ def statements_handler(message):
             print(ex)
 
             #!bot.send_message(message.chat.id, "Error", reply_markup=keyboard_main)
-            bot.clear_step_handler_by_chat_id(message.char.id)
+
             error=driver[message.chat.id].find_element(By.ID, "messblock")
+            print(error.text)
             bot.send_message(message.chat.id, error.text, reply_markup=keyboard_cancel)
+            bot.clear_step_handler_by_chat_id(message.char.id)
 
 
 
@@ -146,13 +168,10 @@ def sms_handler(message, sms_code):
     else:
         bot.send_message(message.chat.id, "Возникла ошибка. Убедитесь в правильности введенных данных и повторите позже", reply_markup=keyboard_cancel )
 
-
-
-
     #bot.send_message(message.chat.id,f"Успех{success.text}" )
 
     #!!!!!Необходимо закрывать каждый процесс браузера после работы
-
+    driver[message.chat.id].close()
 
 
 
@@ -162,7 +181,7 @@ def Cancel_handler(call):
 
     bot.send_message(call.message.chat.id,"!! ", reply_markup=keyboard_main)
     bot.clear_step_handler_by_chat_id(call.message.chat.id)
-
+    driver[message.chat.id].close()
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
